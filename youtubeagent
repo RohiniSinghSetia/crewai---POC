@@ -1,0 +1,64 @@
+import warnings
+import os
+warnings.filterwarnings('ignore')
+os.environ['PIP_ROOT_USER_ACTION'] = 'ignore'
+
+from crewai import Agent, Task, Crew, Process
+from crewai_tools import ScrapeWebsiteTool, SerperDevTool,YoutubeVideoSearchTool
+
+
+import os
+os.environ["OPENAI_API_KEY"] = "Replace with your OPENAI_API_KEY"
+
+
+# ✅ Create the search tool (no arguments during init)
+search_tool = YoutubeVideoSearchTool()
+
+# ✅ Define the research agent
+researcher = Agent(
+    role='Video Content Researcher',
+    goal='Extract key insights from YouTube videos on AI advancements',
+    backstory=(
+        "You are a skilled researcher who excels at extracting valuable insights from video content. "
+        "You focus on gathering accurate and relevant information from YouTube to support your team."
+    ),
+    verbose=True,
+    tools=[search_tool],
+    memory=True
+)
+
+# ✅ Define the writing agent
+writer = Agent(
+    role='Tech Article Writer',
+    goal='Craft an article based on the research insights',
+    backstory=(
+        "You are an experienced writer known for turning complex information into engaging and accessible articles. "
+        "Your work helps make advanced technology topics understandable to a broad audience."
+    ),
+    verbose=True,
+    tools=[search_tool],  # Also has access to the YouTube tool
+    memory=True
+)
+
+# Create task for researcher
+research_task = Task(
+    description="Find the latest insights on the benefits of AI in education using YouTube.",
+    expected_output="A bullet-point list of 5–7 key takeaways from the most relevant videos.",
+    agent=researcher
+)
+
+# Create task for writer
+writing_task = Task(
+    description="Write an engaging article based on the researcher's bullet points about AI in education.",
+    expected_output="A well-structured article with intro, body, and conclusion.",
+    agent=writer
+)
+
+# Run the crew
+crew = Crew(
+    agents=[researcher, writer],
+    tasks=[research_task, writing_task],
+    verbose=True
+)
+
+crew.kickoff()

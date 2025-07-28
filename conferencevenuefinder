@@ -1,0 +1,77 @@
+import warnings
+import os
+warnings.filterwarnings('ignore')
+os.environ['PIP_ROOT_USER_ACTION'] = 'ignore'
+
+from crewai import Agent, Task, Crew
+from crewai_tools import SerperDevTool
+
+# Create a search tool
+search_tool = SerperDevTool()
+
+import os
+os.environ["OPENAI_API_KEY"] = "Replace with your OPENAI_API_KEY"
+os.environ["SERPER_API_KEY"] = "Replace with your SERPER_API_KEY"
+
+class VenueFinderAgent(Agent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+    def perform_task(self, inputs):
+        # Construct search query string from inputs
+        conference_name = inputs.get("conference_name", "")
+        requirements = inputs.get("requirements", "")
+        search_query = (
+            f"Best conference venues in London, UK for {conference_name} "
+            f"with requirements: {requirements}"
+        )
+        
+        # Call the search tool with the required argument
+        search_results = self.tools[0]({"search_query": search_query})
+        
+        # Here you can add logic to process search_results to filter top 5 venues etc.
+        
+        # For simplicity, just return raw search results for now
+        return search_results
+
+
+# Then create the venue_finder agent with this class:
+venue_finder = VenueFinderAgent(
+    role="Conference Venue Finder",
+    goal="Find the best venue for the upcoming conference",
+    backstory=(
+        "You are an experienced event planner with a knack for finding the perfect venues. "
+        "Your expertise ensures that all conference requirements are met efficiently. "
+        "Your goal is to provide the client with the best possible venue options."
+    ),
+    tools=[search_tool],
+    verbose=True
+)
+
+# Your task and crew stay the same
+find_venue_task = Task(
+    description=(
+        "Conduct a thorough search to find the best venue for the upcoming conference in London, UK. "
+        "Consider factors such as capacity, location, amenities, and pricing. "
+        "Use online resources and databases to gather comprehensive information."
+    ),
+    expected_output=(
+        "A list of 5 potential venues with detailed information on capacity, location, amenities, pricing, and availability."
+    ),
+    tools=[search_tool],
+    agent=venue_finder,
+)
+
+event_planning_crew = Crew(
+    agents=[venue_finder],
+    tasks=[find_venue_task],
+    verbose=True
+)
+
+inputs = {
+    "conference_name": "AI Innovations Summit",
+    "requirements": "Capacity for 500, central location, modern amenities, budget up to £10,000"
+}
+
+result = event_planning_crew.kickoff(inputs=inputs)
+print(result)
