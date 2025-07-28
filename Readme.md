@@ -10,3 +10,5 @@ install crewai version 0.150.0
 install crewai-tools version 0.58.0
 install youtube-transcript-api version 1.2.1
 install openai version 1.97.1
+
+Reference - https://www.deeplearning.ai/short-courses/multi-ai-agent-systems-with-crewai/
